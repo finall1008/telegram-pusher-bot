@@ -1,4 +1,6 @@
 # Telegram Pusher Bot
+[![Require: Python 3.8](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org/)
+[![Require: python-telegram-bot >= 12.6.1](https://img.shields.io/badge/python--telegram--bot-%3E%3D%2012.6.1-blue)](https://github.com/python-telegram-bot/python-telegram-bot)
 
 一个简单的机器人，可以帮助你通过简易的步骤快速提取从其他来源获得的消息中的链接，将他们标记后推送到频道、群组。
 
@@ -14,7 +16,7 @@
 
 1. 通过 `git clone https://github.com/finall1008/telegram-pusher-bot` 获取项目文件
 2. 向 @BotFather 申请一个机器人
-3. 修改配置文件
+3. [修改配置文件](docs/Edit_config.md)
 4. `pip install -r requirements.txt`
 5. `python main.py`
 6. 将你的机器人以及其他可能需要的机器人或用户添加到**频道**中，开始使用。
@@ -30,6 +32,8 @@
 **自定义标签功能暂时不可用**：它依赖 ForceReply 功能，而此功能在频道中不可用，需要等待我们添加群组相关的支持。
 
 ## Licence
+
+![GitHub](https://img.shields.io/github/license/finall1008/telegram-pusher-bot)
 
 ## Credit
 
