@@ -1,0 +1,4 @@
+aiohttp
+pillow
+python-telegram-bot
+mwt
