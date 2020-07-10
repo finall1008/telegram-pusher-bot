@@ -289,15 +289,20 @@ def update_message(update, context):
     except KeyError:
         try:
             waitingToPush[message_id] = Message(
-                re.search(link_regex, text).group(0)
+                next(iter(callback.message.parse_entities(
+                    ["url"]).keys())).url
             )
         except:
-            waitingToPush[message_id] = Message(
-                next(iter(callback.message.parse_entities(
-                    ["text_link"]).keys())).url
-            )
-
-    # print(waitingToPush)  # SaltyFish: For DEBUG
+            try:
+                waitingToPush[message_id] = Message(
+                    next(iter(callback.message.parse_entities(
+                        ["text_link"]).keys())).url
+                )
+            except:
+                waitingToPush[message_id] = Message(
+                    re.search(link_regex, text).group(0)
+                )
+                # print(waitingToPush)  # SaltyFish: For DEBUG
 
     try:
         editor_bot.edit_message_reply_markup(
@@ -349,7 +354,7 @@ def push_single(update, context):
         return
     message.push()
     update.callback_query.answer(
-        f"成功推送 {message_id}")
+        f"开始推送 {message_id}")
     waitingToPush.pop(message_id)
     Bot(token=TOKEN).edit_message_reply_markup(
         chat_id=update.callback_query.message.chat.id, message_id=message_id, reply_markup=main_buttons(
