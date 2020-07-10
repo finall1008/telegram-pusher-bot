@@ -106,16 +106,19 @@ class Message:
         return f"<Message:\n{ self.__str__() }\n>"
 
     @ run_async
-    def push(self, targets_override: list = None):
+    def push(self, targets_override: list = None, tags_additional: set = None):
         bot = Bot(token=TOKEN)
         sep = "\n\n"
         self_tags = self.get_tags()
+        if tags_additional:
+            self_tags_with_additional = set(self_tags).union(tags_additional)
+            self_tags = list(self_tags_with_additional)
         if targets_override:
             self_targets = targets_override
         else:
             self_targets = self.get_targets()
         if not self_targets:
-            logger.warning(f"未提供目标：发送到默认目标")
+            logger.info(f"未提供目标：发送到默认目标")
             self_targets = [targets[0]]
         if not self_tags:
             # logger.warning(f"未提供分类") SaltyFish: Seems unnecessary
@@ -418,7 +421,7 @@ def restart(update, context):
 
 
 @ run_async
-def push(update, context, targets_override: list = None):
+def push(update, context, args: list = None):
     chat = update.effective_chat
     chat_id = chat.id
     editor_bot = Bot(token=TOKEN)
@@ -426,12 +429,19 @@ def push(update, context, targets_override: list = None):
     if chat.CHANNEL or update.effective_user.id in get_admin(update.bot, chat_id):
         waitingToPushCurrent = dict(waitingToPush)
         waitingToPush.clear()
-        print(waitingToPushCurrent)
+        # print(waitingToPushCurrent) # Finall: For debug
         pushed_message_id = list(waitingToPushCurrent.keys())
         logger.info(f"推送全部内容")
         update.effective_message.reply_text(text="开始推送队列中全部内容", quote=True)
+        targets_override = list()
+        tags_additional = set()
+        for arg in args:
+            if arg[0] == "@":
+                targets_override.append(arg)
+            else:
+                tags_additional.add(arg)
         for message in waitingToPushCurrent.values():
-            message.push(targets_override)
+            message.push(targets_override, tags_additional)
         del waitingToPushCurrent
         for message_id in pushed_message_id:
             editor_bot.edit_message_reply_markup(
@@ -508,7 +518,7 @@ def bot_command_handler(update, context):
         command = text.split(" ")[0][1:]
         args = text.split(" ")[1:]
         if command == "push":
-            push(update=update, context=context, targets_override=args)
+            push(update=update, context=context, args=args)
         elif command == "check":
             check(update=update, context=context)
         elif command == "log_by_id":
