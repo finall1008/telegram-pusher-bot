@@ -160,7 +160,7 @@ def send_bili_feed(url: str, classification: str, bot: Bot, target):
             )
 
     async def parse_queue(url):
-        f = await feedparser(url, video=False)
+        f = await feedparser(url, video=True)  # Finall: 启用视频类内容解析
         if not f:
             logger.warning(f"解析错误！")
             return

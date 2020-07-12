@@ -57,7 +57,7 @@ sub_regex = r"sub"
 custom_regex = r"custom"
 link_regex = r"[a-zA-z]+://[^\s]*"
 bili_regex = r"(?i)\w*\.?(?:bilibili\.com|(?:b23|acg)\.tv)\S+"
-bili_v_regex = r"(www\.bilibili\.com|(b23|acg)\.tv)/(video/|)([aA][vV][0-9]*|[bB][vV][a-zA-Z0-9]*)"
+# bili_v_regex = r"(www\.bilibili\.com|(b23|acg)\.tv)/(video/|)([aA][vV][0-9]*|[bB][vV][a-zA-Z0-9]*)" # Finall: 启用阿 B 主站视频解析
 
 
 # Helper functions
@@ -126,7 +126,8 @@ class Message:
 
         for target in self_targets:
             logger.info(f"将 {self.url} 推送至 {target}.")
-            if not re.search(bili_regex, self.url) or re.search(bili_v_regex, self.url):
+            # or re.search(bili_v_regex, self.url): # Finall: 启用 BiliBili 主站视频内容解析
+            if not re.search(bili_regex, self.url):
                 bot.send_message(
                     target,
                     self.url + sep +
