@@ -293,7 +293,7 @@ def update_message(update, context):
         try:
             waitingToPush[message_id] = Message(
                 next(iter(callback.message.parse_entities(
-                    ["url"]).keys())).url
+                    ["url"]).values()))
             )
         except:
             try:
