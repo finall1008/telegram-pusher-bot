@@ -1,6 +1,6 @@
 # Telegram Pusher Bot
 [![Require: Python 3.8](https://img.shields.io/badge/Python-3.8-blue)](https://www.python.org/)
-[![Require: python-telegram-bot >= 12.6.1](https://img.shields.io/badge/python--telegram--bot-%3E%3D%2012.6.1-blue)](https://github.com/python-telegram-bot/python-telegram-bot)
+[![Require: python-telegram-bot >= 12.8](https://img.shields.io/badge/python--telegram--bot-%3E%3D%2012.6.1-blue)](https://github.com/python-telegram-bot/python-telegram-bot)
 
 一个简单的机器人，可以帮助你通过简易的步骤快速提取从其他来源获得的消息中的链接，将他们标记后推送到频道、群组。
 
