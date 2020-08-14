@@ -25,14 +25,14 @@ from telegram.error import BadRequest, TimedOut
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown
 
-from feedparser import feedparser, headers
+from .feedparser import feedparser, headers
 
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
-logger = logging.getLogger("rssbot_push")
+logger = logging.getLogger("push_helper")
 
 
 # >
@@ -91,8 +91,7 @@ def send_bili_feed(url: str, classification: str, bot: Bot, target):
             logger.info(f"上传中: {f.url}")
         else:
             if f.mediatype == "image":
-                media = [i if ".gif" in i else i +
-                         "@1280w.jpg" for i in f.mediaurls]
+                media = [i if ".gif" in i else i + "@1280w.jpg" for i in f.mediaurls]
             else:
                 media = f.mediaurls
         if f.mediatype == "video":
@@ -162,7 +161,7 @@ def send_bili_feed(url: str, classification: str, bot: Bot, target):
     async def parse_queue(url):
         f = await feedparser(url, video=True)  # Finall: 启用视频类内容解析
         if not f:
-            logger.warning(f"解析错误！")
+            logger.warning(f"解析错误!")
             return
         reply_markup = InlineKeyboardMarkup(
             [[InlineKeyboardButton(text="原链接", url=f.url)]]

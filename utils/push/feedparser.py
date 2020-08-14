@@ -8,10 +8,6 @@ from functools import cached_property, lru_cache
 
 import aiohttp
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-
 logger = logging.getLogger("Bili_Feed_Parser")
 
 headers = {

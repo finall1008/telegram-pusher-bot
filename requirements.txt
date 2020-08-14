@@ -2,3 +2,5 @@ aiohttp
 pillow
 python-telegram-bot
 mwt
+pixivpy-async
+bs4

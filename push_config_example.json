@@ -1,0 +1,19 @@
+{
+    "tags": [
+        "同人图"
+    ],
+    "targets": [
+        "@meaquabanyun"
+    ],
+    "token": "",
+    "watchers": [
+    ],
+    "forward": {
+        "@from": [
+            "@to"
+        ]
+    },
+    "pixiv_username": "",
+    "pixiv_password": "",
+    "download_path": ""
+}
