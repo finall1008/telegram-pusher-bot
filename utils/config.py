@@ -3,9 +3,19 @@ from __future__ import annotations
 import json
 import weakref
 
+from typing import (
+    Callable,
+    Union,
+    Any,
+    Tuple,
+    List,
+    Dict,
+    FrozenSet,
+    Iterator,
+    Optional,
+)
 from weakref import ReferenceType
-from typing import *
-from inspect import ismethod
+from inspect import isfunction, ismethod
 from warnings import warn
 from functools import reduce
 from os import PathLike
@@ -31,7 +41,11 @@ File = Union[str, bytes, PathLike, int]
 User = Union[int, str]
 
 
-def indent(iterable: IterableType, indent: int = 4, breakline: str = '\n', stringfier: Callable[[Any], str] = str) -> str:
+def indent(
+        iterable: IterableType,
+        indent: int = 4,
+        breakline: str = '\n',
+        stringfier: Callable[[Any], str] = str) -> str:
     return ''.join(map(lambda obj: breakline+indent*' '+stringfier(obj), iterable))
 
 
@@ -53,8 +67,20 @@ class MetaConfig(type):
     def configs(mcls) -> Dict[str, ReferenceType[MetaConfig]]:
         return dict(mcls.__configs)
 
+    @ staticmethod
+    def non_classmethod(func: Callable[..., Any]) -> Callable[..., Any]:
+        func.__is_non_objectmethod = True
+        return func
+
+    @ staticmethod
+    def isnon_classmethod(func) -> bool:
+        try:
+            return func.__is_non_objectmethod
+        except AttributeError:
+            return False
+
     def __new__(mcls, name, bases, namespace, **kwargs):
-        namespace['_items_name'] = frozenset(
+        namespace[f'_{mcls.__name__}__items_name'] = frozenset(
             name for name, value in namespace.items()
             if mcls.is_item(name, value)
         )
@@ -64,50 +90,53 @@ class MetaConfig(type):
         weakref.finalize(cls, lambda: mcls.__configs.pop(cls.__qualname__))
         return cls
 
+    def __init__(self, *args, **kwargs) -> None:
+        self.__items_name: FrozenSet[str]
+
     @ staticmethod
     def is_item(name: str, value: Any) -> bool:
         return not (
             name.startswith('__')
             or name.startswith('_')
-            or ismethod(value)
+            or isfunction(value)
             or isinstance(value, (classmethod, staticmethod))
         )
 
     def __str__(self, *args, **kwargs):
-        return self.__str__(self, *args, **kwargs)
+        return self.__str__(*args, **kwargs)
 
     def __repr__(self, *args, **kwargs):
-        return self.__repr__(self, *args, **kwargs)
+        return self.__repr__(*args, **kwargs)
 
-    def __iter__(self) -> Iterable[str]:
-        for name in self._items_name:
+    def __iter__(self) -> Iterator[str]:
+        for name in self.__items_name:
             yield name
 
     def __len__(self) -> int:
-        return len(self._items_name)
+        return len(self.__items_name)
 
     def keys(self) -> FrozenSet[str]:
-        return frozenset(self._items_name)
+        return frozenset(self.__items_name)
 
-    def values(self) -> Iterable[Any]:
+    def values(self) -> Iterator[Any]:
         for name in self:
             yield self[name]
 
-    def items(self) -> Iterable[Tuple[str, Any]]:
+    def items(self) -> Iterator[Tuple[str, Any]]:
         for name in self:
             yield name, self[name]
 
-    def all_keys(self) -> Iterable[str]:
+    def all_keys(self) -> Iterator[str]:
         for name, value in self.__dict__.items():
             if self.is_item(name, value):
                 yield name
 
-    def all_values(self) -> Iterable[Any]:
+    def all_values(self) -> Iterator[Any]:
         for name, value in self.__dict__.items():
             if self.is_item(name, value):
                 yield name, value
 
-    def all_items(self) -> Iterable[Tuple[str, _T]]:
+    def all_items(self) -> Iterator[Tuple[str, Any]]:
         for name, value in self.__dict__.items():
             if self.is_item(name, value):
                 yield name, value
@@ -119,7 +148,7 @@ class MetaConfig(type):
             if default:
                 return default
             else:
-                raise KeyError(f"{self.__qualname__} does not have an registered item named {name}")
+                raise KeyError(f"{self.__qualname__} does not have an registered item named {key}")
 
     def __setattr__(self, name, value):
         original_type = type(self.__dict__.get(name, None))
@@ -142,17 +171,19 @@ class MetaConfig(type):
             raise KeyError(f"{self.__qualname__} does not have an registered item named {key}")
 
     def __contains__(self, name: str) -> bool:
-        return name in self._items_name
+        return name in self.__items_name
 
 
 class BaseConfig(metaclass=MetaConfig):
     __registered: Dict[str, Dict[MetaConfig, FrozenSet[str]]] = {}
 
+    @ classmethod
     def __str__(cls, **kwargs):
         return json.dumps(cls.json(), **kwargs)
 
+    @ classmethod
     def __repr__(cls):
-        return cls.__str__(cls)
+        return cls.__str__()
 
     @ classmethod
     def json(cls) -> Dict[str, Any]:
@@ -199,7 +230,7 @@ class BaseConfig(metaclass=MetaConfig):
             if old_path == new_path:
                 pass
             else:
-                intersect = reduce(frozenset.union, map(lambda fs: cls.keys().intersect(fs), registered[new_path].values()), frozenset())
+                intersect = reduce(frozenset.union, map(lambda fs: cls.keys().intersection(fs), registered[new_path].values()), frozenset())
                 if not intersect:
                     path_dict[cls] = registered[old_path].pop(cls)
                     if not registered[old_path]:
@@ -207,7 +238,7 @@ class BaseConfig(metaclass=MetaConfig):
                 else:
                     raise ValueError(
                         f"Referring to existed config item{'s' if len(intersect) > 1 else ''} "
-                        f"{' '.join(map(repr, intersect))} in class {name}."
+                        f"{' '.join(map(repr, intersect))} in class {cls.__qualname__}."
                     )
 
         with open(path, 'a+'):
@@ -216,7 +247,7 @@ class BaseConfig(metaclass=MetaConfig):
             try:
                 data = json.load(file)
             except:
-                data =  None
+                data = None
         cls.from_json(data)
         cls._config_file = path
         cls.dump(data=data)
@@ -264,12 +295,13 @@ class BaseConfig(metaclass=MetaConfig):
 
 
 class Config(BaseConfig, config_file="push_config.json"):
-    tags: Optional[Tuple[str]] = ()
-    targets: Tuple[User] = ()
+    tags: Optional[Tuple[str, ...]] = ()
+    targets: Tuple[User, ...] = ()
     token: str = ''
-    watchers: Tuple[User] = ()
+    watchers: Tuple[User, ...] = ()
     forward: Dict[User, List[User]] = {}
 
+    @ classmethod
     def __repr__(cls):
         return (
             "<Config:\n"
@@ -287,8 +319,9 @@ class Config(BaseConfig, config_file="push_config.json"):
             indent(cls.forward.items(), stringfier=lambda t: f"from: {t[0]!s} to:{indent(t[1], indent=8)}")
         )
 
+    @ classmethod
     def __str__(cls):
-        return super().__str__(cls, ensure_ascii=False, indent=4)
+        return super().__str__(ensure_ascii=False, indent=4)
 
     @ classmethod
     def _check(cls, _attr_name: str, _attr_value: Any) -> Tuple[str, Any]:

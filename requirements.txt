@@ -1,6 +1,6 @@
 aiohttp
 pillow
-python-telegram-bot
+python-telegram-bot >= 12.8
 mwt
 pixivpy-async
 bs4

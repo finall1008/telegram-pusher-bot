@@ -172,7 +172,7 @@ def _timeout(timeout, exception_type, wrap_type):
         return wrapped
 
 
-    def decorator_timer(func: Callable[..., Any]) -> Callable[..., Any]:
+    def decorator_timer(func: Callable[..., Tuple[bool, Any]]) -> Callable[..., Any]:
         '''
         Return value of the wrapped callable must be a tuple `(flag: bool, return_value: Any)`.
         The callable should not be blocking. `flag` in the return value will be used to indicate running status.
@@ -184,7 +184,7 @@ def _timeout(timeout, exception_type, wrap_type):
                 flag, ret = func(*args, **kwargs)
                 if flag:
                     return ret
-            _raise_exception(exception_type, timeout, func, exc)
+            _raise_exception(exception_type, timeout, func)
 
         return wrapped
 

@@ -1,33 +1,24 @@
 import re
-import logging
 import time
-import asyncio
-import async_timeout
+import logging
 
 from telegram import (
     Bot,
     ForceReply,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputMediaPhoto,
-    InputTextMessageContent,
-    ParseMode,
     Update,
     CallbackQuery,
     Message,
-    User,
-    ReplyKeyboardRemove,
 )
 from telegram.ext import (
     CallbackContext,
     Updater,
     CallbackQueryHandler,
-    CommandHandler,
     Filters,
     MessageHandler,
     Updater,
     run_async,
-    Dispatcher,
 )
 from telegram.error import BadRequest
 from typing import Dict, Callable
@@ -43,23 +34,21 @@ import utils.regexes as regex
 from .auto_select import *
 
 
-# custom_request: Dict[str, int] = {}
 logger = logging.getLogger('push_helper')
 
 
 def parse_url(message: Message):
-    message_id = message.message_id
     text = message.text
 
     try:
-        ret = next(iter(message.parse_entities(["url"]).values()))
-    except:
+        ret = message.parse_entities(["url"]).values().__iter__().__next__()
+    except StopIteration:
         try:
-            ret = next(iter(message.parse_entities(["text_link"]).keys())).url
-        except:
+            ret = message.parse_entities(["text_link"]).keys().__iter__().__next__().url
+        except (StopIteration, AttributeError):
             try:
                 ret = re.search(regex.link, text).group(0)
-            except:
+            except AttributeError:
                 ret = text
 
     return ret
@@ -71,7 +60,6 @@ def into_push_list(f: Callable):
     def wrapped(update: Update, context: CallbackContext):
         message = update.callback_query.message
         message_id = message.message_id
-        text = message.text
 
         if message_id not in push.waiting_to_push:
             push.waiting_to_push[message_id] = push.Message(parse_url(message))
@@ -81,47 +69,20 @@ def into_push_list(f: Callable):
     return wrapped
 
 
-@ timeout(15)
-def get_reply(message: Message, update_queue: Queue) -> Message:
-    while True:
+def get_reply(message: Message, update_queue: Queue, timeout: float) -> Message:
+    now = time.perf_counter
+    deadline = now() + timeout
+    while now() <= deadline:
         try:
-            update = update_queue.get(block=True)
-        except Exception:
+            update = update_queue.get(block=True, timeout=deadline-now())
+        except Empty:
             continue
+        update_queue.task_done()
+        if update.message and update.message.reply_to_message == message:
+            return update.message
         else:
-            update_queue.task_done()
             update_queue.put_nowait(update)
-            if update.message and update.message.reply_to_message == message:
-                return update.message
-
-
-# ! Failed on asynchronizing this function. Waiting for @Finall to solve this all.
-#async def get_reply(message: Message, update_queue: Queue, _timeout: float = 5) -> Message:
-#    async def get_update():
-#        try:
-#            update = update_queue.get(block=False)
-#        except:
-#            update = None
-#        else:
-#            update_queue.put(update)
-#        return update
-#
-#    async def foo(): # 不可以被 wait_for 正常取消
-#        while True: # 根源?
-#            update = await get_update()
-#            if update == None:
-#                continue
-#            if update.message and update.message.reply_to_message == message:
-#                return update.message
-#
-#    async def bar(): # 可以被 wait_for 正常取消
-#        await asyncio.sleep(10)
-#        return Message()
-#
-#    # try:
-#    return await bar()
-#    # except asyncio.CancelledError: 似乎没必要
-#    #     raise
+    raise TimeLimitReached(f"Reached given time limit {timeout}s")
 
 
 def no(*args, **kwargs):
@@ -222,7 +183,7 @@ def main_buttons(message_id: int):
 
 @ run_async
 @ into_push_list
-def update_tag(update: Updater, context: CallbackContext):
+def update_tag(update: Update, context: CallbackContext):
     callback: CallbackQuery = update.callback_query
     message = callback.message
     message_id = message.message_id
@@ -239,20 +200,8 @@ def update_tag(update: Updater, context: CallbackContext):
             reply_to_message_id=message_id,
             reply_markup=ForceReply(selective=True)
         )
-        # * Nice Try (?)
-        #try:
-        #    # loop = asyncio.new_event_loop()
-        #    replied_msg = asyncio.run(asyncio.wait_for(get_reply(original_message, context.update_queue), timeout=10))
-        #    # loop.close()
-        #except asyncio.TimeoutError:
-        #    logger.exception(f"错误: 自定义回复超时")
-        #else:
-        #    push.waiting_to_push[message_id].customized_tags.append(replied_msg.text)
-        #    replied_msg.delete()
-        #finally:
-        #    original_message.delete()
         try:
-            replied_message = get_reply(original_message, context.update_queue)
+            replied_message = get_reply(original_message, context.update_queue, timeout=5)
         except TimeLimitReached:
             logger.exception(f"错误: 自定义回复超时")
         else:
@@ -282,7 +231,7 @@ def update_tag(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=tag_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
@@ -291,7 +240,7 @@ def update_tag(update: Updater, context: CallbackContext):
 
 @ run_async
 @ into_push_list
-def update_target(update: Updater, context: CallbackContext):
+def update_target(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
     message_id = message.message_id
@@ -311,7 +260,7 @@ def update_target(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=target_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
@@ -320,7 +269,7 @@ def update_target(update: Updater, context: CallbackContext):
 
 @ run_async
 @ into_push_list
-def update_return(update: Updater, context: CallbackContext):
+def update_return(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
     message_id = message.message_id
@@ -332,7 +281,7 @@ def update_return(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=main_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
@@ -341,7 +290,7 @@ def update_return(update: Updater, context: CallbackContext):
 
 @ run_async
 #@ into_push_list
-def update_message(update: Updater, context: CallbackContext):
+def update_message(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
     message_id = message.message_id
@@ -358,46 +307,16 @@ def update_message(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=main_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
             pass
 
 
-
-# Finall: 等待自动转发/群组支持
-# SaltyFish: 实现于另一模块当中
-
-
-# Saltyfish: 不同的实现方式
-#@run_async
-#def custom_tag(update: Updater, context: CallbackContext):
-#    message = update.callback_query.message
-#    if not update.effective_chat.CHANNEL:
-#        replied_msg = message.reply_text(text="👆从这里返回\n请输入自定义 Tag:", reply_markup=ForceReply(
-#            force_reply=True, selective=True))
-#        global custom_tag_msg
-#        custom_tag_msg = (replied_msg.message_id, message.message_id)
-#    else:
-#        message.reply_text(text="该功能在 Channel 中不可用，请考虑利用自动转发迁移到群组")
-#
-#@run_async
-#def custom_tag_reply(update: Updater, context: CallbackContext):
-#    global custom_tag_msg
-#    message_id = update.effective_message.message_id
-#    if not message_id == custom_tag_msg[0]:
-#        return
-#    else:
-#        push.waiting_to_push[custom_tag_msg[1]].customized_tags.append(
-#            update.effective_message.text)
-#    update.effective_message.reply_text(text="已添加")
-#    custom_tag_msg = ()
-
-
 @ run_async
 @ into_push_list
-def push_single(update: Updater, context: CallbackContext):
+def push_single(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
     message_id = message.message_id
@@ -416,7 +335,7 @@ def push_single(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=main_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
@@ -424,7 +343,7 @@ def push_single(update: Updater, context: CallbackContext):
 
 
 @ run_async
-def add_keyboard(update: Updater, context: CallbackContext):
+def add_keyboard(update: Update, context: CallbackContext):
     message = update.effective_message
     message_id = message.message_id
     chat_id = message.chat.id
@@ -433,13 +352,13 @@ def add_keyboard(update: Updater, context: CallbackContext):
         message.edit_reply_markup(
             reply_markup=main_buttons(message_id)
         )
-    except Exception as exc:
+    except BadRequest as exc:
         if exception_not_modified(exc) is None:
             logger.exception(f"错误: 无法编辑Markup")
         else:
             pass
     else:
-        logger.info(f"成功添加按钮到 {message_id}")
+        logger.info(f"成功添加按钮到 {message_id}") 
 
 
 def register(updater: Updater):

@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sys
 
 from importlib import import_module
 from signal import SIGINT, SIGTERM, SIGABRT, signal
@@ -18,11 +19,11 @@ from utils import (
 from markup import main_buttons
 from interactive import handle # DEBUG
 
-###############################
-import telegram.ext.updater
-from multiprocessing import JoinableQueue
-telegram.ext.updater.Queue = JoinableQueue
-###############################
+############################### > For future use: multiprocessing demand
+#import telegram.ext.updater
+#from multiprocessing import JoinableQueue
+#telegram.ext.updater.Queue = JoinableQueue
+############################### <
 
 submodules = {
     name: import_module(name)
@@ -33,27 +34,19 @@ submodules = {
     ]
 }
 
-
+################################### >
 @ wraps(Updater.idle)
 def idle(self: Updater, stop_signals=(SIGINT, SIGTERM, SIGABRT)):
-    @ timeout(1, wrap_type=WrapType.SIGNAL)
-    def get_command():
-        return input()
-
     for sig in stop_signals:
         signal(sig, self.signal_handler)
 
     self.is_idle = True
 
     while self.is_idle:
-        try:
-            command = get_command()
-        except TimeLimitReached:
-            continue
-        else:
-            handle(command)
+        command = input('>>> ')
+        handle(command)
 Updater.idle = idle
-
+################################### <
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -77,5 +70,13 @@ if __name__ == "__main__":
 
     updater.start_polling()
     logger.info(f"Bot @{updater.bot.get_me().username} 已启动")
+    try:
+        if sys.argv[-2] != "--restart":
+            raise Exception()
+    except:
+        pass
+    else:
+        updater.bot.send_message(chat_id=int(sys.argv[-1]), text="重启完毕")
+
 
     updater.idle()

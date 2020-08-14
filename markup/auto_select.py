@@ -18,6 +18,9 @@ from utils import Config, indent
 from utils.push import Message
 
 
+# ! This part is unfinished for now
+
+
 curdir = path.dirname(__file__)
 config_name = "auto_select.json"
 absolute_config_path = path.join(curdir, config_name)
@@ -44,7 +47,7 @@ class Rule(dict):
         dict.__init__(self, type=type, **kwargs)
 
     def exert(self, subject: ArgT) -> Tuple[bool, RetT]:
-        handler = self.__handler_map[self.pop['type']]
+        handler = self.__handler_map[self.pop('type')]
         return handler(subject, **self)
 
 
@@ -57,7 +60,7 @@ class AutoSelect(Config, config_file=absolute_config_path):
     rule_for_targets: Optional[List[List[Rule]]] = []
 
     @ classmethod
-    def _check(self, _attr_name: str, _attr_value: Any):
+    def _check(cls, _attr_name: str, _attr_value: Any):
         return (
             _attr_name,
             [
@@ -72,6 +75,7 @@ class AutoSelect(Config, config_file=absolute_config_path):
     def exert(cls, message: Message) -> None:
         pass
 
+    @ classmethod
     def __repr__(self):
         return "<AutoSelect:\nrule_for_tags:{}\nrule_for_targets:{}\n>".format(
             indent(self.rule_for_tags),
