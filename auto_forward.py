@@ -64,7 +64,13 @@ def auto_forward(update: Update, context: CallbackContext):
 
 def register(updater: Updater):
     dp = updater.dispatcher
-    dp.add_handler(MessageHandler(get_filter(Config.forward), auto_forward))
+    from_chat_list = set()
+    for from_chat in Config.forward.keys():
+        if len(from_chat.split(":")) == 2:
+            from_chat_list.add(from_chat.split(":")[0])
+        else:
+            from_chat_list.add(from_chat)
+    dp.add_handler(MessageHandler(get_filter(from_chat), auto_forward))
 
 
 if __name__ == "__main__":
