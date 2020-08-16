@@ -45,7 +45,7 @@ def auto_forward(update: Update, context: CallbackContext):
     for to_chat_id in to_chat_ids:
         if isinstance(to_chat_id, str):
             split_result = to_chat_id.split(":")
-            if split_result[1] == "push" or use_push_all:
+            if len(split_result) == 2 or use_push_all:
                 Msg(parse_url(message)).push(targets_additional=[split_result[0]])
         elif use_push_all:
             Msg(parse_url(message)).push(targets_additional=[to_chat_id])
