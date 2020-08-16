@@ -51,13 +51,13 @@ def auto_forward(update: Update, context: CallbackContext):
                 try:
                     to_chat = [int(split_result[0])]
                 except ValueError:
-                    to_chat = [split_result[0]]
+                    to_chat = [user_format(split_result[0])]
                 Msg(parse_url(message)).push(targets_additional=to_chat)
-        elif use_push_all:
-            Msg(parse_url(message)).push(targets_additional=[to_chat_id])
+        if use_push_all:
+            Msg(parse_url(message)).push(targets_additional=[user_format(to_chat_id)])
         else:
             message: Message = bot.send_message(
-                to_chat_id,
+                user_format(to_chat_id),
                 text=message.text_html_urled or message.caption_html_urled,
                 parse_mode=ParseMode.HTML,
                 disable_notification=True,
