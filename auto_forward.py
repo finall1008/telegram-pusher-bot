@@ -15,7 +15,8 @@ from telegram.ext import (
 )
 
 from utils import Config, user_format, get_filter
-from markup import main_buttons
+from utils.push import Message as Msg
+from markup import main_buttons, parse_url
 
 
 logger = logging.getLogger('push_helper')
@@ -33,15 +34,29 @@ def auto_forward(update: Update, context: CallbackContext):
     try:
         to_chat_ids = Config.forward[user_format(from_chat.username)]
     except KeyError:
-        to_chat_ids = Config.forward[user_format(from_chat.id)]
+        try:
+            to_chat_ids = Config.forward[user_format(from_chat.id)]
+        except KeyError:
+            try:
+                to_chat_ids = Config.forward[user_format(from_chat.username) + ":push"]
+            except KeyError:
+                to_chat_ids = Config.forward[str(user_format(from_chat.id)) + ":push"]
+            use_push_all = True
     for to_chat_id in to_chat_ids:
-        message: Message = bot.send_message(
-            to_chat_id,
-            text=message.text_html_urled or message.caption_html_urled,
-            parse_mode=ParseMode.HTML,
-            disable_notification=True,
-            #reply_markup=main_buttons(message.message_id)
-        )
+        if isinstance(to_chat_id, str):
+            split_result = to_chat_id.split(":")
+            if split_result[1] == "push" or use_push_all:
+                Msg(parse_url(message)).push(targets_additional=[split_result[0]])
+        elif use_push_all:
+            Msg(parse_url(message)).push(targets_additional=[to_chat_id])
+        else:
+            message: Message = bot.send_message(
+                to_chat_id,
+                text=message.text_html_urled or message.caption_html_urled,
+                parse_mode=ParseMode.HTML,
+                disable_notification=True,
+                #reply_markup=main_buttons(message.message_id)
+            )
     message.edit_reply_markup(
         reply_markup=main_buttons(message.message_id)
     )

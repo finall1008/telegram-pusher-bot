@@ -1,5 +1,6 @@
 __pycache__
 push_config.json
+push_config_backup.json
 .vscode
 PixivDownload
 auto_select.json

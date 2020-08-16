@@ -10,7 +10,8 @@
     ],
     "forward": {
         "@from": [
-            "@to"
+            "@to:push",
+            "@toAnother:foward"
         ]
     },
     "pixiv_username": "",
