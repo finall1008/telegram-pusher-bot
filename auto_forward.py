@@ -31,6 +31,8 @@ def auto_forward(update: Update, context: CallbackContext):
     else:
         message = update.message
     from_chat = update.effective_chat
+
+    use_push_all = False
     try:
         to_chat_ids = Config.forward[user_format(from_chat.username)]
     except KeyError:
@@ -50,7 +52,6 @@ def auto_forward(update: Update, context: CallbackContext):
                     to_chat = [int(split_result[0])]
                 except ValueError:
                     to_chat = [split_result[0]]
-                print(to_chat)
                 Msg(parse_url(message)).push(targets_additional=to_chat)
         elif use_push_all:
             Msg(parse_url(message)).push(targets_additional=[to_chat_id])
