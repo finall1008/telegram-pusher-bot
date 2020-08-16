@@ -46,7 +46,12 @@ def auto_forward(update: Update, context: CallbackContext):
         if isinstance(to_chat_id, str):
             split_result = to_chat_id.split(":")
             if len(split_result) == 2 or use_push_all:
-                Msg(parse_url(message)).push(targets_additional=[split_result[0]])
+                try:
+                    to_chat = [int(split_result[0])]
+                except ValueError:
+                    to_chat = [split_result[0]]
+                print(to_chat)
+                Msg(parse_url(message)).push(targets_additional=to_chat)
         elif use_push_all:
             Msg(parse_url(message)).push(targets_additional=[to_chat_id])
         else:
@@ -64,13 +69,13 @@ def auto_forward(update: Update, context: CallbackContext):
 
 def register(updater: Updater):
     dp = updater.dispatcher
-    from_chat_list = set()
+    from_chat_list = list()
     for from_chat in Config.forward.keys():
         if len(from_chat.split(":")) == 2:
-            from_chat_list.add(from_chat.split(":")[0])
+            from_chat_list.append(from_chat.split(":")[0])
         else:
-            from_chat_list.add(from_chat)
-    dp.add_handler(MessageHandler(get_filter(from_chat), auto_forward))
+            from_chat_list.append(from_chat)
+    dp.add_handler(MessageHandler(get_filter(from_chat_list), auto_forward))
 
 
 if __name__ == "__main__":
