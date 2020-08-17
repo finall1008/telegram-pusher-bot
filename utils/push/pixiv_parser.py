@@ -157,7 +157,7 @@ class PixivParser:
             sub_file_groups.append(tmp_sub_file_group)
             for sub_file_group in sub_file_groups:
                 bot.send_media_group(chat_id=target, media=sub_file_group)
-            bot.send_text(chat_id=target,
+            bot.send_message(chat_id=target,
                           text=msg_text,
                           reply_markup=origin_link(illust_id),
                           disable_web_page_preview=True,
