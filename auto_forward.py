@@ -53,6 +53,7 @@ def auto_forward(update: Update, context: CallbackContext):
                 except ValueError:
                     to_chat = [user_format(split_result[0])]
                 Msg(parse_url(message)).push(targets_additional=to_chat)
+                continue
         if use_push_all:
             Msg(parse_url(message)).push(targets_additional=[user_format(to_chat_id)])
         else:
