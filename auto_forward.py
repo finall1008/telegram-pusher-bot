@@ -22,7 +22,6 @@ from markup import main_buttons, parse_url
 logger = logging.getLogger('push_helper')
 
 
-@ run_async
 def auto_forward(update: Update, context: CallbackContext):
     bot = Bot(token=Config.token)
 
@@ -40,9 +39,11 @@ def auto_forward(update: Update, context: CallbackContext):
             to_chat_ids = Config.forward[user_format(from_chat.id)]
         except KeyError:
             try:
-                to_chat_ids = Config.forward[user_format(from_chat.username) + ":push"]
+                to_chat_ids = Config.forward[user_format(
+                    from_chat.username) + ":push"]
             except KeyError:
-                to_chat_ids = Config.forward[str(user_format(from_chat.id)) + ":push"]
+                to_chat_ids = Config.forward[str(
+                    user_format(from_chat.id)) + ":push"]
             use_push_all = True
     for to_chat_id in to_chat_ids:
         if isinstance(to_chat_id, str):
@@ -55,14 +56,15 @@ def auto_forward(update: Update, context: CallbackContext):
                 Msg(parse_url(message)).push(targets_additional=to_chat)
                 continue
         if use_push_all:
-            Msg(parse_url(message)).push(targets_additional=[user_format(to_chat_id)])
+            Msg(parse_url(message)).push(
+                targets_additional=[user_format(to_chat_id)])
         else:
             message: Message = bot.send_message(
                 user_format(to_chat_id),
                 text=message.text_html_urled or message.caption_html_urled,
                 parse_mode=ParseMode.HTML,
                 disable_notification=True,
-                #reply_markup=main_buttons(message.message_id)
+                # reply_markup=main_buttons(message.message_id)
             )
     message.edit_reply_markup(
         reply_markup=main_buttons(message.message_id)
@@ -77,7 +79,8 @@ def register(updater: Updater):
             from_chat_list.append(from_chat.split(":")[0])
         else:
             from_chat_list.append(from_chat)
-    dp.add_handler(MessageHandler(get_filter(from_chat_list), auto_forward))
+    dp.add_handler(MessageHandler(get_filter(
+        from_chat_list), auto_forward, run_async=True))
 
 
 if __name__ == "__main__":

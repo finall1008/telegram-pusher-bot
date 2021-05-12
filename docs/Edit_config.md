@@ -28,8 +28,4 @@
 
 若您使用 `utils/push/pixiv-parser` 模块，则必须按要求填写以下内容。
 
-`pixiv_username`：必须项，Pixiv 用户名，用于登录 Pixiv。
-
-`pixiv_password`：必须项，Pixiv 密码，用于登录 Pixiv。
-
-`download_path`：选填项，指定图片的下载位置。若您不指定，则程序将把该项目的值设定为 `utils/push/PixivDownload`。
+`refresh_token`：Pixiv 登录必须使用的参数。请参考[此处](https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362)获取，或者，参考[本人翻译的中文版本](https://github.com/finall1008/telegram-pixiv-bot/blob/master/docs/get_refresh_token.md)。

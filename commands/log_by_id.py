@@ -54,12 +54,12 @@ def replaced(seq: Sequence[Any], value: Any, new_value: Any) -> Sequence[Any]:
     return manipulated_if(seq, lambda x: x == value, lambda x: new_value)
 
 
-@ run_async
 def run(update: Update, context: CallbackContext):
     chat = update.effective_message.chat
     watcher_name = chat.username
 
-    utils.Config.watchers = replaced(utils.Config.watchers, user_format(watcher_name), chat.id)
+    utils.Config.watchers = replaced(
+        utils.Config.watchers, user_format(watcher_name), chat.id)
     try:
         utils.Config.dump()
     except ValueError:
@@ -76,5 +76,6 @@ def register(updater: Updater):
     dp = updater.dispatcher
     bot = updater.bot
 
-    dp.add_handler(CommandHandler(__name__, run, filters=get_filter(bot)))
+    dp.add_handler(CommandHandler(
+        __name__, run, filters=get_filter(bot), run_async=True))
     # dp.add_handler(CommandHandler(__name__, run, filters=Filters.all)) # DEBUG

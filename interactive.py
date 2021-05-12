@@ -27,7 +27,6 @@ def command(command: str, *args) -> None:
         print(f"/{command!r} is not a valid command, for now")
 
 
-@ run_async
 def handle(text: str) -> None:
     if text.startswith('/'):
         command(*text.lstrip('/').split(' '))

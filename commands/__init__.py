@@ -23,14 +23,13 @@ def describe():
     return "列出所有的指令, 需注意列出的指令在当前的环境内不一定可用"
 
 
-@ run_async
 def run(update: Update, context: CallbackContext):
     update.effective_message.reply_text(
         text="所有指令如下:\n"
-            + "\n".join(
-                [f"/{command}: {description}"
-                for command, description in commands_list]
-            ),
+        + "\n".join(
+            [f"/{command}: {description}"
+             for command, description in commands_list]
+        ),
         quote=True
     )
 
@@ -48,7 +47,9 @@ def register(updater: Updater):
         module.register(updater)
 
     dp = updater.dispatcher
-    dp.add_handler(CommandHandler(__name__, run, filters=get_filter(Config.watchers)))
+    dp.add_handler(CommandHandler(
+        __name__, run, filters=get_filter(Config.watchers), run_async=True))
     # dp.add_handler(CommandHandler(__name__, run, filters=Filters.all)) # DEBUG
 
-    updater.bot.set_my_commands(commands_list) # * Unavailable until all commands are implemented (or at least their describe methods return a string with len > 3)
+    # * Unavailable until all commands are implemented (or at least their describe methods return a string with len > 3)
+    updater.bot.set_my_commands(commands_list)

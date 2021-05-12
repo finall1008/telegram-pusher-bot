@@ -80,7 +80,6 @@ async def get_media(f, url, size=1280, compression=True):
 
 
 # > 这个函数是 telegram-bili-feed-helper/main.py 中 parse 函数的改写。
-@ run_async
 def send_bili_feed(url: str, classification: str, bot: Bot, target):
     async def callback(f, caption):
         if f.mediathumb:
@@ -91,7 +90,8 @@ def send_bili_feed(url: str, classification: str, bot: Bot, target):
             logger.info(f"上传中: {f.url}")
         else:
             if f.mediatype == "image":
-                media = [i if ".gif" in i else i + "@1280w.jpg" for i in f.mediaurls]
+                media = [i if ".gif" in i else i +
+                         "@1280w.jpg" for i in f.mediaurls]
             else:
                 media = f.mediaurls
         if f.mediatype == "video":

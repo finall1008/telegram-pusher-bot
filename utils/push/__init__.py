@@ -39,7 +39,6 @@ class Message():
     def __repr__(self) -> str:
         return f"<Message:\n{ self.__str__() }\n>"
 
-    @ run_async
     def push(self, targets_additional: Optional[List[utils.User]] = None, tags_additional: Optional[List[str]] = None):
         bot = Bot(token=Config.token)
         sep = "\n\n"
@@ -59,7 +58,8 @@ class Message():
             if not re.search(regex.bili, self.url) and not re.search(regex.pixiv, self.url):
                 bot.send_message(
                     target,
-                    self.url + sep + "  ".join(map(lambda tag: "#" + tag, self_tags))
+                    self.url + sep +
+                    "  ".join(map(lambda tag: "#" + tag, self_tags))
                 )
             elif re.search(regex.pixiv, self.url):
                 PixivParser.send(

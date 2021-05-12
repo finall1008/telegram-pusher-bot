@@ -17,13 +17,13 @@ from utils import (
     TimeLimitReached,
 )
 from markup import main_buttons
-from interactive import handle # DEBUG
+from interactive import handle  # DEBUG
 
-############################### > For future use: multiprocessing demand
+# > For future use: multiprocessing demand
 #import telegram.ext.updater
 #from multiprocessing import JoinableQueue
 #telegram.ext.updater.Queue = JoinableQueue
-############################### <
+# <
 
 submodules = {
     name: import_module(name)
@@ -34,7 +34,9 @@ submodules = {
     ]
 }
 
-################################### >
+# >
+
+
 @ wraps(Updater.idle)
 def idle(self: Updater, stop_signals=(SIGINT, SIGTERM, SIGABRT)):
     for sig in stop_signals:
@@ -45,8 +47,10 @@ def idle(self: Updater, stop_signals=(SIGINT, SIGTERM, SIGABRT)):
     while self.is_idle:
         command = input('>>> ')
         handle(command)
+
+
 Updater.idle = idle
-################################### <
+# <
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -60,7 +64,8 @@ def error(update: Update, context: CallbackContext):
 
 
 if __name__ == "__main__":
-    updater: Updater = Updater(token=Config.token, use_context=True, workers=len(os.sched_getaffinity(0))*2)
+    updater: Updater = Updater(
+        token=Config.token, use_context=True, workers=len(os.sched_getaffinity(0))*2)
 
     for submodule in submodules.values():
         submodule.register(updater)
@@ -77,6 +82,5 @@ if __name__ == "__main__":
         pass
     else:
         updater.bot.send_message(chat_id=int(sys.argv[-1]), text="重启完毕")
-
 
     updater.idle()

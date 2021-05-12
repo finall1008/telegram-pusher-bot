@@ -38,16 +38,15 @@ def describe():
     return "推送所有已选中内容至各自目标"
 
 
-@ run_async
 def run(update: Update, context: CallbackContext):
     editor_bot = Bot(token=utils.Config.token)
 
-    if not push.waiting_to_push :
+    if not push.waiting_to_push:
         update.effective_message.reply_text(text="推送队列为空", quote=True)
         return
 
     waiting_to_push = dict(push.waiting_to_push)
-    push.waiting_to_push.clear() # SaltyFish: My fault.
+    push.waiting_to_push.clear()  # SaltyFish: My fault.
     logger.info(f"推送全部内容")
     update.effective_message.reply_text(text="开始推送队列中全部内容", quote=True)
     targets_additional, tags_additional = list(), list()
@@ -69,4 +68,5 @@ def register(updater: Updater):
     dp = updater.dispatcher
     bot = updater.bot
 
-    dp.add_handler(CommandHandler(__name__, run, filters=get_filter(bot)))
+    dp.add_handler(CommandHandler(
+        __name__, run, filters=get_filter(bot), run_async=True))

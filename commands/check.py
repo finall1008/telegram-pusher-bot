@@ -36,7 +36,6 @@ def describe():
     return "检查所有已选中内容"
 
 
-@ run_async
 def run(update: Update, context: CallbackContext):
     bot = Bot(token=utils.Config.token)
     chat = update.effective_chat
@@ -62,5 +61,6 @@ def register(updater: Updater):
     dp = updater.dispatcher
     bot = updater.bot
 
-    dp.add_handler(CommandHandler(__name__, run, filters=get_filter(bot)))
+    dp.add_handler(CommandHandler(
+        __name__, run, filters=get_filter(bot), run_async=True))
     # dp.add_handler(CommandHandler(__name__, run, filters=Filters.all)) # DEBUG

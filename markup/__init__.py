@@ -44,7 +44,8 @@ def parse_url(message: Message):
         ret = message.parse_entities(["url"]).values().__iter__().__next__()
     except StopIteration:
         try:
-            ret = message.parse_entities(["text_link"]).keys().__iter__().__next__().url
+            ret = message.parse_entities(
+                ["text_link"]).keys().__iter__().__next__().url
         except (StopIteration, AttributeError):
             try:
                 ret = re.search(regex.link, text).group(0)
@@ -63,7 +64,7 @@ def into_push_list(f: Callable):
 
         if message_id not in push.waiting_to_push:
             push.waiting_to_push[message_id] = push.Message(parse_url(message))
-        #print(push.waiting_to_push)  # SaltyFish: For DEBUG
+        # print(push.waiting_to_push)  # SaltyFish: For DEBUG
         return f(update, context)
 
     return wrapped
@@ -126,7 +127,8 @@ def tag_buttons(message_id: int):
 
     buttons_list.extend([
         [
-            InlineKeyboardButton(text="> 目标", callback_data=regex.target+regex.sub),
+            InlineKeyboardButton(
+                text="> 目标", callback_data=regex.target+regex.sub),
             InlineKeyboardButton(text="返回", callback_data=regex.ret)
         ]
     ])
@@ -154,7 +156,8 @@ def target_buttons(message_id: int):
 
     buttons_list.extend([
         [
-            InlineKeyboardButton(text="< 标签", callback_data=regex.tag+regex.sub),
+            InlineKeyboardButton(
+                text="< 标签", callback_data=regex.tag+regex.sub),
             InlineKeyboardButton(text="返回", callback_data=regex.ret)
         ]
     ])
@@ -169,8 +172,10 @@ def main_buttons(message_id: int):
         buttons_list[0][0].text = "移出队列"
         buttons_list.extend([
             [
-                InlineKeyboardButton(text="标签", callback_data=regex.tag+regex.sub),
-                InlineKeyboardButton(text="目标", callback_data=regex.target+regex.sub)
+                InlineKeyboardButton(
+                    text="标签", callback_data=regex.tag+regex.sub),
+                InlineKeyboardButton(
+                    text="目标", callback_data=regex.target+regex.sub)
             ],
             [
                 InlineKeyboardButton(text="推送", callback_data=regex.push)
@@ -181,7 +186,6 @@ def main_buttons(message_id: int):
     return InlineKeyboardMarkup(buttons_list)
 
 
-@ run_async
 @ into_push_list
 def update_tag(update: Update, context: CallbackContext):
     callback: CallbackQuery = update.callback_query
@@ -201,11 +205,13 @@ def update_tag(update: Update, context: CallbackContext):
             reply_markup=ForceReply(selective=True)
         )
         try:
-            replied_message = get_reply(original_message, context.update_queue, timeout=5)
+            replied_message = get_reply(
+                original_message, context.update_queue, timeout=5)
         except TimeLimitReached:
             logger.exception(f"错误: 自定义回复超时")
         else:
-            push.waiting_to_push[message_id].customized_tags.append(replied_message.text)
+            push.waiting_to_push[message_id].customized_tags.append(
+                replied_message.text)
             replied_message.delete()
         finally:
             original_message.delete()
@@ -238,7 +244,6 @@ def update_tag(update: Update, context: CallbackContext):
             pass
 
 
-@ run_async
 @ into_push_list
 def update_target(update: Update, context: CallbackContext):
     callback = update.callback_query
@@ -252,7 +257,8 @@ def update_target(update: Update, context: CallbackContext):
     if not re.search(regex.sub, data):
         target_index = int(data[len(regex.target):])
         try:
-            push.waiting_to_push[message_id].target_indices.remove(target_index)
+            push.waiting_to_push[message_id].target_indices.remove(
+                target_index)
         except KeyError:
             push.waiting_to_push[message_id].target_indices.add(target_index)
 
@@ -267,7 +273,6 @@ def update_target(update: Update, context: CallbackContext):
             pass
 
 
-@ run_async
 @ into_push_list
 def update_return(update: Update, context: CallbackContext):
     callback = update.callback_query
@@ -288,8 +293,7 @@ def update_return(update: Update, context: CallbackContext):
             pass
 
 
-@ run_async
-#@ into_push_list
+# @ into_push_list
 def update_message(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
@@ -314,19 +318,19 @@ def update_message(update: Update, context: CallbackContext):
             pass
 
 
-@ run_async
 @ into_push_list
 def push_single(update: Update, context: CallbackContext):
     callback = update.callback_query
     message = callback.message
     message_id = message.message_id
     editor_bot = Bot(token=Config.token)
-    #try:
+    # try:
     #message_to_push = push.waiting_to_push[message_id]
-    #except:
+    # except:
     #    logger.exception(f"尝试推送不在队列中的消息")
     #    return
-    message_to_push = push.waiting_to_push[message_id] # SaltyFish: 新的炫酷装饰器保证了它会在列表内
+    # SaltyFish: 新的炫酷装饰器保证了它会在列表内
+    message_to_push = push.waiting_to_push[message_id]
 
     message_to_push.push()
     update.callback_query.answer(f"开始推送单条消息, id: {message_id}")
@@ -342,7 +346,6 @@ def push_single(update: Update, context: CallbackContext):
             pass
 
 
-@ run_async
 def add_keyboard(update: Update, context: CallbackContext):
     message = update.effective_message
     message_id = message.message_id
@@ -358,7 +361,7 @@ def add_keyboard(update: Update, context: CallbackContext):
         else:
             pass
     else:
-        logger.info(f"成功添加按钮到 {message_id}") 
+        logger.info(f"成功添加按钮到 {message_id}")
 
 
 def register(updater: Updater):
@@ -371,7 +374,8 @@ def register(updater: Updater):
 
     dp = updater.dispatcher
     dp.add_handler(MessageHandler(filter_user & filter_command, no))
-    dp.add_handler(MessageHandler(filter_user & ~ filter_command & ~ filter_reply, add_keyboard))
+    dp.add_handler(MessageHandler(
+        filter_user & ~ filter_command & ~ filter_reply, add_keyboard))
     #dp.add_handler(MessageHandler(Filters.all, add_keyboard))
     dp.add_handler(CallbackQueryHandler(update_tag, pattern=regex.tag))
     dp.add_handler(CallbackQueryHandler(update_target, pattern=regex.target))
