@@ -40,7 +40,7 @@ submodules = {
 @ wraps(Updater.idle)
 def idle(self: Updater, stop_signals=(SIGINT, SIGTERM, SIGABRT)):
     for sig in stop_signals:
-        signal(sig, self.signal_handler)
+        signal(sig, self._signal_handler)
 
     self.is_idle = True
 
